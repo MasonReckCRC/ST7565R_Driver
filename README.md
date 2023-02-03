@@ -16,6 +16,8 @@ Driver is based off of a bare-bones Arduino driver from Newhaven Displays:
 https://support.newhavendisplay.com/hc/en-us/articles/4415264814231-NHD-C12832A1Z-with-Arduino
 See Link
 
+The driver in its current state is not well optimized, and could be restructured to run a little smoother
+if necessary. 
 
 
 
