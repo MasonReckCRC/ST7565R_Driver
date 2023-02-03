@@ -2,7 +2,6 @@
 Driver for Display Controllers that use the ST7565R driver
 
 DRIVER IS STILL IN PROGRESS
-Painting strings is not yet implemented
 
 Use Vertically Oriented Bitmaps to display custom images. 
 Fonts are Horizontally Oriented. 
