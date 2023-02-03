@@ -15,6 +15,7 @@ Instructions:
 
 
 DRIVER IS STILL IN PROGRESS
+Some functionalities may not be fully implemented. Accept the possibility that there are bugs in my code.
 
 Use Vertically Oriented Bitmaps to display custom images. 
 Fonts are Horizontally Oriented. 
