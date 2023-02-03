@@ -54,8 +54,8 @@
 #define HIGH 			GPIO_PIN_SET
 
 
-#define font_num_bytes_per_char(width, height) 		(((int)width/8) * height)
-#define font_num_bytes_per_row(width) 				((int)width / 8)
+#define font_num_bytes_per_row(width) 				(width % 8 == 0 ? ((int)width / 8) : (1 + ((int)width / 8)))
+#define font_num_bytes_per_char(width, height) 		(font_num_bytes_per_row(width) * height)
 
 #ifdef ST7565R_USING_STM
 #define digital_write(portPin, highLow) HAL_GPIO_WritePin(portPin.port, portPin.pin, highLow)
@@ -148,6 +148,10 @@ void ST7565R_drawFullscreenBitmap(uint8_t* bitmap);
 void ST7565R_clearScreen(void);
 
 
+/*
+ * To use custom fonts, you will need to make and pass
+ * your own font structure */ #pragma ST7565R_Font /*
+ * */
 void ST7565R_configureFont(ST7565R_Font newFont);
 
 void ST7565R_init_LCD(void);

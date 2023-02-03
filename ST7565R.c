@@ -89,7 +89,7 @@ void ST7565R_paintPixel(unsigned x, unsigned y, bool newLevel)
 	if(newLevel){
 		newByte |= 0b00000001<<(y%8);
 	} else {
-		newByte &= 0b11111110<<(y%8);
+		newByte &= ~(0b00000001<<(y%8));
 	}
 	curScreen[byteIndex] = newByte;
 	uint8_t colMSB = x/0x10;
@@ -115,6 +115,7 @@ void ST7565R_paintString(char* string, unsigned x, unsigned y){
 
 		// Paint the currently selected character
 		ST7565R_paintChar(string[i], x, y);
+		x += curFont.width;
 	}
 }
 void ST7565R_paintChar(char c, unsigned x, unsigned y){
@@ -123,17 +124,28 @@ void ST7565R_paintChar(char c, unsigned x, unsigned y){
 	unsigned bytesPerChar = font_num_bytes_per_char(curFont.width, curFont.height);
 	unsigned startIndex = (c - curFont.firstChar) * bytesPerChar;
 	unsigned endIndex = startIndex + bytesPerChar;
+	unsigned iterateRowTest = 0;
+	unsigned width = 0;
 
 	// Loop for all the bytes
 	for(int i = startIndex; i < endIndex; i ++){
-
 		uint8_t charByte = curFont.glyphs[i];
-
 
 		//Loop for each individual byte
 		for(int j = 0; j < 8; j ++){
-			bool drawOrErase = (0x10 & (charByte<<j)) != 0;
-//			ST7565R_paintPixel(x, y, drawOrErase);
+			width = x - originalX;
+			if(width < curFont.width){
+				bool drawOrErase = (0b10000000 & (charByte<<j)) != 0;
+				ST7565R_paintPixel(x, y, drawOrErase);
+			}
+			x++;
+		}
+
+		//Test for Next Line/Row
+		iterateRowTest++;
+		if(iterateRowTest % bytesPerRow == 0){
+			x = originalX;
+			y++;
 		}
 	}
 }
