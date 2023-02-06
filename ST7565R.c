@@ -53,27 +53,19 @@ static ST7565R_Font curFont;
 *        Display Functions		                    *
 ****************************************************/
 void ST7565R_command(uint8_t cmd)
-{
-	digital_write(NHD_CS, LOW);		// Set Chip Select to Low to begin transmission over SPI
-	digital_write(NHD_A0, LOW);		// Set AO Low to specify a Command Transmission
-#if defined(ST7565R_USING_STM)
-	HAL_SPI_Transmit(&hspi3, &cmd, 1, HAL_MAX_DELAY);
-#elif defined(ST7565R_USING_ATMEL)
-
-#endif
-	digital_write(NHD_CS, HIGH);		// Set Chip Select to High to signal end of transmission
+{	// This function sends a command to the screen. See list of commands in ST7565R.h
+	ST7565R_digital_write(NHD_CS, LOW);		// Set Chip Select to Low to begin transmission over SPI
+	ST7565R_digital_write(NHD_A0, LOW);		// Set AO Low to specify a Command Transmission
+	ST7565R_spi_transmit(hspi3, cmd, 1, HAL_MAX_DELAY);	// Transmit command via SPI
+	ST7565R_digital_write(NHD_CS, HIGH);	// Set Chip Select to High to signal end of transmission
 }
 
 void ST7565R_paintByteHere(uint8_t byte)
 {	// This function simply draws the byte as is in the preselected location
-	digital_write(NHD_CS, LOW);			// Set Chip Select to Low to signal beginning of transmission over SPI
-	digital_write(NHD_A0, HIGH);		// Set AO High to specify a data transmission
-#if defined(ST7565R_USING_STM)
-	HAL_SPI_Transmit(&hspi3, &byte, 1, HAL_MAX_DELAY);
-#elif defined(ST7565R_USING_ATMEL)
-
-#endif
-	digital_write(NHD_CS, HIGH);		// Set Chip Select to High to signal end of transmission
+	ST7565R_digital_write(NHD_CS, LOW);			// Set Chip Select to Low to signal beginning of transmission over SPI
+	ST7565R_digital_write(NHD_A0, HIGH);		// Set AO High to specify a data transmission
+	ST7565R_spi_transmit(hspi3, byte, 1, HAL_MAX_DELAY); // Transmit data byte through SPI
+	ST7565R_digital_write(NHD_CS, HIGH);		// Set Chip Select to High to signal end of transmission
 }
 
 void ST7565R_paintByte(unsigned column, unsigned page, uint8_t byte)
@@ -93,7 +85,7 @@ void ST7565R_paintByte(unsigned column, unsigned page, uint8_t byte)
 	ST7565R_command(ST7565R_CMD_DISPLAY_ON);
 }
 
-void ST7565R_paintPixel(unsigned x, unsigned y, bool newLevel)
+void ST7565R_paintPixel(bool newLevel, unsigned x, unsigned y)
 {
 	if(x >= SCREENWIDTH){x = SCREENWIDTH-1;}
 	if(y >= SCREENHEIGHT){y = SCREENHEIGHT-1;}
@@ -150,7 +142,7 @@ void ST7565R_paintChar(char c, unsigned x, unsigned y){
 			width = x - originalX;
 			if(width < curFont.width){
 				bool drawOrErase = (0b10000000 & (charByte<<j)) != 0;
-				ST7565R_paintPixel(x, y, drawOrErase);
+				ST7565R_paintPixel(drawOrErase, x, y);
 			}
 			x++;
 		}
@@ -164,7 +156,7 @@ void ST7565R_paintChar(char c, unsigned x, unsigned y){
 	}
 }
 
-void ST7565R_drawFullscreenBitmap(uint8_t* bitmap)
+void ST7565R_paintFullscreenBitmap(uint8_t* bitmap)
 {
 	if(bitmap == NULL){bitmap = crc;}					// Catch Null Pointers
 	uint8_t page = ST7565R_CMD_PAGE_ADDRESS_SET(0);		// Initialize page
@@ -184,9 +176,13 @@ void ST7565R_drawFullscreenBitmap(uint8_t* bitmap)
 	ST7565R_command(ST7565R_CMD_DISPLAY_ON);			// Set Display ON
 }
 
+void ST7565R_paintBitmap(uint8_t* bitmap, unsigned x, unsigned y){
+	// TODO: Implement paint Bitmap
+}
+
 void ST7565R_clearScreen(void)
 {
-	ST7565R_drawFullscreenBitmap(clear);
+	ST7565R_paintFullscreenBitmap(clear);
 	for(int i = 0; i < 512; i ++){
 		curScreen[i] = 0x00;
 	}
@@ -225,9 +221,9 @@ void ST7565R_init_LCD(void)  {
 ****************************************************/
 void ST7565R_setup(void) {
 	curScreen = clear;
-	digital_write(NHD_RES, LOW);
+	ST7565R_digital_write(NHD_RES, LOW);
 	ST7565R_delay(100);
-	digital_write(NHD_RES, HIGH);
+	ST7565R_digital_write(NHD_RES, HIGH);
 	ST7565R_delay(100);
 	ST7565R_init_LCD();
 }
@@ -236,7 +232,7 @@ void ST7565R_setup(void) {
 /****************************************************
 *            Backlight Functions			        *
 ****************************************************/
-void setBacklightNHD(uint8_t brightness){
+void ST7565R_setBacklight(uint8_t brightness){
 	if(brightness < 0)
 		brightness = 0;
 	else if (brightness > 100)
@@ -244,7 +240,7 @@ void setBacklightNHD(uint8_t brightness){
 
 	ST7565R_set_pwm(brightness);
 }
-void blinkBacklightNHD(uint8_t oscillationSpeed){
+void ST7565R_blinkBacklight(uint8_t oscillationSpeed){
 	static int16_t tempBright = 0;
 	static int8_t dir = 1;
 	tempBright += dir * oscillationSpeed;
@@ -261,17 +257,19 @@ void blinkBacklightNHD(uint8_t oscillationSpeed){
 }
 
 
-
-void screenTest(void){
-	setBacklightNHD(70);
-	ST7565R_drawFullscreenBitmap(crc);
+/****************************************************
+*            Test Functions			  		        *
+****************************************************/
+void ST7565R_screenTest(void){
+	ST7565R_setBacklightNHD(70);
+	ST7565R_paintFullscreenBitmap(crc);
 	return;
 	unsigned testX = 0;
 	unsigned testY = 0;
 	bool testBool = true;
 	while (1) {
 		ST7565R_delay(10);
-		ST7565R_paintPixel(testX, testY, testBool);
+		ST7565R_paintPixel(testBool, testX, testY);
 		testX++;
 		if (testX == SCREENWIDTH) {
 			testX = 0;

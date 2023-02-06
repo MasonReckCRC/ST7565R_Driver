@@ -32,18 +32,24 @@
 //*****************************************************************************/
 
 
-
-
-
 #ifndef ST7565R_H_
 #define ST7565R_H_
 
 
+
+
+
+
+/***** CONFIGURE ME! *****/
 #define ST7565R_USING_STM
 //#define ST7565R_USING_ATMEL
 
-#include <stdbool.h>
 
+
+
+
+
+#include <stdbool.h>
 #ifdef ST7565R_USING_STM
 #include "spi.h"
 #endif
@@ -51,37 +57,43 @@
 
 
 /*****************************************************
-*            Pre-Processor Directives				 *
+*     Configurable Pre-Processor Directives			 *
 *****************************************************/
 #define SCREENWIDTH		128
 #define SCREENHEIGHT	32
-#define NUM_PAGES		4
-
-
 
 #if defined(ST7565R_USING_STM)
-#define LOW 			GPIO_PIN_RESET
-#define HIGH 			GPIO_PIN_SET
-
-#define ST7565R_set_pwm(dutyCycle)			TIM2->CCR1 = dutyCycle /*Configure Me*/
-#define digital_write(portPin, highLow) 	HAL_GPIO_WritePin(portPin.port, portPin.pin, highLow)
-#define ST7565R_delay(delayTime)			HAL_Delay(delayTime)
-
+#define ST7565R_set_pwm(dutyCycle)							TIM2->CCR1 = dutyCycle /*TODO: Configure Me */
+#define ST7565R_digital_write(portPin, highLow) 			HAL_GPIO_WritePin(portPin.port, portPin.pin, highLow)
+#define ST7565R_delay(delayTime)							HAL_Delay(delayTime)
+#define ST7565R_spi_transmit(spi, data, size, timeout)		HAL_SPI_Transmit(&spi, &data, size, timeout)
 #elif defined(ST7565R_USING_ATMEL)
-#define LOW 			0
-#define HIGH 			1
-
-#define ST7565R_set_pwm(dutyCycle)			/*TODO: Configure for Atmel*/
-#define digital_write(portPin, highLow) 	/*TODO: Configure for Atmel*/
-#define ST7565R_delay(delayTime)			delay_ms(delayTime);
+#define ST7565R_set_pwm(dutyCycle)							/*TODO: Configure for Atmel*/
+#define ST7565R_digital_write(portPin, highLow) 			/*TODO: Configure for Atmel*/
+#define ST7565R_delay(delayTime)							delay_ms(delayTime);
+#define ST7565R_spi_transmit(spi, data, size, timeout)		/*TODO: Configure for Atmel*/
+#else
+#define ST7565R_set_pwm(dutyCycle)							/*TODO: Configure your function to your own architecture*/
+#define ST7565R_digital_write(portPin, highLow) 			/*TODO: Configure your function to your own architecture*/
+#define ST7565R_delay(delayTime)							/*TODO: Configure your function to your own architecture*/
+#define ST7565R_spi_transmit(spi, data, size, timeout)		/*TODO: Configure your function to your own architecture*/
 #endif
 
+/*****************************************************
+*     Non-Configurable Pre-Processor Directives		 *
+*****************************************************/
+
+// Definitions
+#define NUM_PAGES		SCREENHEIGHT / 8
+
+// Macros
 #define font_num_bytes_per_row(width) 				(width % 8 == 0 ? ((int)width / 8) : (1 + ((int)width / 8)))
 #define font_num_bytes_per_char(width, height) 		(font_num_bytes_per_row(width) * height)
 
 /****************************************************
 *              Commands				                *
 ****************************************************/
+
 #define ST7565R_CMD_DISPLAY_ON                      0xAF
 #define ST7565R_CMD_DISPLAY_OFF                     0xAE
 #define ST7565R_CMD_START_LINE_SET(line)            (0x40 | (line))
@@ -143,10 +155,16 @@ typedef struct ST7565R_Font{
 	char lastChar;
 } ST7565R_Font;
 
-const enum{
+typedef const enum{
 	ERASE,
 	DRAW
-};
+} ST7565R_DrawState;
+
+typedef const enum
+{
+  LOW = 0U,
+  HIGH
+} ST7565R_PinState;
 
 /****************************************************
 *                 Functions			                *
@@ -156,10 +174,11 @@ const enum{
 void ST7565R_command(uint8_t command);
 void ST7565R_paintByteHere(uint8_t byte);
 void ST7565R_paintByte(unsigned column, unsigned page, uint8_t byte);
-void ST7565R_paintPixel(unsigned x, unsigned y, bool newLevel);
+void ST7565R_paintPixel(bool newLevel, unsigned x, unsigned y);
 void ST7565R_paintString(char* string, unsigned x, unsigned y);
 void ST7565R_paintChar(char c, unsigned x, unsigned y);
-void ST7565R_drawFullscreenBitmap(uint8_t* bitmap);
+void ST7565R_paintFullscreenBitmap(uint8_t* bitmap);
+void ST7565R_paintBitmap(uint8_t* bitmap, unsigned x, unsigned y);
 void ST7565R_clearScreen(void);
 void ST7565R_init_LCD(void);
 void ST7565R_setup(void);
@@ -169,10 +188,12 @@ void ST7565R_configureFont(ST7565R_Font newFont);
  * */
 
 // Backlight functions
-void setBacklightNHD(uint8_t brightness);
-void blinkBacklightNHD(uint8_t oscillation);
+void ST7565R_setBacklight(uint8_t brightness);
+void ST7565R_blinkBacklight(uint8_t oscillation);
 
-void screenTest(void);
+
+// Test Functions
+void ST7565R_screenTest(void);
 
 
 /*************************************************************************************************************************\
