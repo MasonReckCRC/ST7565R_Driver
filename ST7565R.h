@@ -32,6 +32,8 @@
 //*****************************************************************************/
 
 
+
+
 #ifndef ST7565R_H_
 #define ST7565R_H_
 
@@ -43,7 +45,8 @@
 /***** CONFIGURE ME! *****/
 #define ST7565R_USING_STM
 //#define ST7565R_USING_ATMEL
-
+//#define ST7565R_USING_CUSTOM
+/***** CONFIGURE ME! *****/
 
 
 
@@ -73,22 +76,23 @@
 #define ST7565R_delay(delayTime)							delay_ms(delayTime);
 #define ST7565R_spi_transmit(spi, data, size, timeout)		/*TODO: Configure for Atmel*/
 #else
-#define ST7565R_set_pwm(dutyCycle)							/*TODO: Configure your function to your own architecture*/
-#define ST7565R_digital_write(portPin, highLow) 			/*TODO: Configure your function to your own architecture*/
-#define ST7565R_delay(delayTime)							/*TODO: Configure your function to your own architecture*/
-#define ST7565R_spi_transmit(spi, data, size, timeout)		/*TODO: Configure your function to your own architecture*/
+#define ST7565R_set_pwm(dutyCycle)							/*TODO: Configure this function to your own architecture*/
+#define ST7565R_digital_write(portPin, highLow) 			/*TODO: Configure this function to your own architecture*/
+#define ST7565R_delay(delayTime)							/*TODO: Configure this function to your own architecture*/
+#define ST7565R_spi_transmit(spi, data, size, timeout)		/*TODO: Configure this function to your own architecture*/
 #endif
 
 /*****************************************************
 *     Non-Configurable Pre-Processor Directives		 *
 *****************************************************/
 
-// Definitions
-#define NUM_PAGES		SCREENHEIGHT / 8
-
 // Macros
-#define font_num_bytes_per_row(width) 				(width % 8 == 0 ? ((int)width / 8) : (1 + ((int)width / 8)))
-#define font_num_bytes_per_char(width, height) 		(font_num_bytes_per_row(width) * height)
+#define font_num_bytes_per_row(width) 						(width % 8 == 0 ? ((int)width / 8) : (1 + ((int)width / 8)))
+#define font_num_bytes_per_char(width, height) 				(font_num_bytes_per_row(width) * height)
+#define ST7565R_num_pages_from_height(height)				((height/8) + (height%8==0 ? 0 : 1))
+
+// Definitions
+#define NUM_PAGES											ST7565R_num_pages_from_height(SCREENHEIGHT)
 
 /****************************************************
 *              Commands				                *
@@ -140,7 +144,7 @@
 *           Enumerations and Structures             *
 ****************************************************/
 
-#ifdef ST7565R_USING_STM
+#if defined(ST7565R_USING_STM)
 typedef struct ST7565R_STM_Pin {
 	GPIO_TypeDef* port;
 	uint16_t pin;
@@ -167,7 +171,7 @@ typedef const enum
 } ST7565R_PinState;
 
 /****************************************************
-*                 Functions			                *
+*        Function Prototypes               		    *
 ****************************************************/
 
 // ST7565R functions
@@ -178,9 +182,10 @@ void ST7565R_paintPixel(bool newLevel, unsigned x, unsigned y);
 void ST7565R_paintString(char* string, unsigned x, unsigned y);
 void ST7565R_paintChar(char c, unsigned x, unsigned y);
 void ST7565R_paintFullscreenBitmap(uint8_t* bitmap);
-void ST7565R_paintBitmap(uint8_t* bitmap, unsigned x, unsigned y);
+void ST7565R_paintBitmap(uint8_t* bitmap, unsigned width, unsigned height, unsigned x, unsigned y);
+void ST7565R_paintRectangle(ST7565R_DrawState drawOrErase, unsigned x, unsigned y, unsigned width, unsigned height);
 void ST7565R_clearScreen(void);
-void ST7565R_init_LCD(void);
+void ST7565R_initScreen(void);
 void ST7565R_setup(void);
 void ST7565R_configureFont(ST7565R_Font newFont);
 /* To use custom fonts, you will need to make and pass
@@ -199,7 +204,7 @@ void ST7565R_screenTest(void);
 /*************************************************************************************************************************\
 |   Bitmaps											   																	  |
 |*************************************************************************************************************************|
-|   	Find bitmaps in the following bitmaps.h file */#pragma BITMAPS_H /* (ctrl+click) to nav there					  |
+|   	Find bitmaps in the following bitmaps.h file */ #pragma BITMAPS_H /* (ctrl+click) to nav there					  |
 \*************************************************************************************************************************/
 #endif
 
