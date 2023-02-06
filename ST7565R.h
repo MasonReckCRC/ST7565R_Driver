@@ -7,26 +7,33 @@
  */
 
 ///*****************************************************************************
- //*
-/// Program for writing to NHD-C12832A1Z display Series with the ST7565R Controller.
-///
-/// Newhaven Display invests time and resources providing this open source code,
-/// Please support Newhaven Display by purchasing products from Newhaven Display!
-//
-//* Copyright (c) 2019, Newhaven Display International
-//*
-//* This code is provided as an example only and without any warranty by Newhaven Display.
-//* Newhaven Display accepts no responsibility for any issues resulting from its use.
-//* The developer of the final application incorporating any parts of this
-//* sample code is responsible for ensuring its safe and correct operation
-//* and for any consequences resulting from its use.
-//* See the GNU General Public License for more details.
-//*
-//* Use Vertical Orientation when converting BMP to hex code to display custom image using LCD assistant.
-//
-//
-//*
+/*
+ The following note is from the driver that I based this driver off of from New Haven Displays
+ https://support.newhavendisplay.com/hc/en-us/articles/4415264814231-NHD-C12832A1Z-with-Arduino
+ Some elements of the original driver may remain within this code, and thus this note from NHD
+ has been left in.
+*/
+
+/* Program for writing to NHD-C12832A1Z display Series with the ST7565R Controller.
+
+ Newhaven Display invests time and resources providing this open source code,
+ Please support Newhaven Display by purchasing products from Newhaven Display!
+
+* Copyright (c) 2019, Newhaven Display International
+*
+* This code is provided as an example only and without any warranty by Newhaven Display.
+* Newhaven Display accepts no responsibility for any issues resulting from its use.
+* The developer of the final application incorporating any parts of this
+* sample code is responsible for ensuring its safe and correct operation
+* and for any consequences resulting from its use.
+* See the GNU General Public License for more details.
+*
+* Use Vertical Orientation when converting BMP to hex code to display custom image using LCD assistant.
 //*****************************************************************************/
+
+
+
+
 
 #ifndef ST7565R_H_
 #define ST7565R_H_
@@ -50,20 +57,27 @@
 #define SCREENHEIGHT	32
 #define NUM_PAGES		4
 
+
+
+#if defined(ST7565R_USING_STM)
 #define LOW 			GPIO_PIN_RESET
 #define HIGH 			GPIO_PIN_SET
 
+#define ST7565R_set_pwm(dutyCycle)			TIM2->CCR1 = dutyCycle /*Configure Me*/
+#define digital_write(portPin, highLow) 	HAL_GPIO_WritePin(portPin.port, portPin.pin, highLow)
+#define ST7565R_delay(delayTime)			HAL_Delay(delayTime)
+
+#elif defined(ST7565R_USING_ATMEL)
+#define LOW 			0
+#define HIGH 			1
+
+#define ST7565R_set_pwm(dutyCycle)			/*TODO: Configure for Atmel*/
+#define digital_write(portPin, highLow) 	/*TODO: Configure for Atmel*/
+#define ST7565R_delay(delayTime)			delay_ms(delayTime);
+#endif
 
 #define font_num_bytes_per_row(width) 				(width % 8 == 0 ? ((int)width / 8) : (1 + ((int)width / 8)))
 #define font_num_bytes_per_char(width, height) 		(font_num_bytes_per_row(width) * height)
-
-#ifdef ST7565R_USING_STM
-#define digital_write(portPin, highLow) HAL_GPIO_WritePin(portPin.port, portPin.pin, highLow)
-#endif
-#ifdef ST7565R_USING_ATMEL
-	//TODO: configure for Atmel
-#endif
-
 
 /****************************************************
 *              Commands				                *
@@ -138,25 +152,23 @@ const enum{
 *                 Functions			                *
 ****************************************************/
 
+// ST7565R functions
 void ST7565R_command(uint8_t command);
-void ST7565R_drawByte(uint8_t byte);
-void ST7565R_setByte(unsigned column, unsigned page, uint8_t byte);
+void ST7565R_paintByteHere(uint8_t byte);
+void ST7565R_paintByte(unsigned column, unsigned page, uint8_t byte);
 void ST7565R_paintPixel(unsigned x, unsigned y, bool newLevel);
 void ST7565R_paintString(char* string, unsigned x, unsigned y);
 void ST7565R_paintChar(char c, unsigned x, unsigned y);
 void ST7565R_drawFullscreenBitmap(uint8_t* bitmap);
 void ST7565R_clearScreen(void);
-
-
-/*
- * To use custom fonts, you will need to make and pass
- * your own font structure */ #pragma ST7565R_Font /*
- * */
-void ST7565R_configureFont(ST7565R_Font newFont);
-
 void ST7565R_init_LCD(void);
 void ST7565R_setup(void);
+void ST7565R_configureFont(ST7565R_Font newFont);
+/* To use custom fonts, you will need to make and pass
+ * your own font structure */ #pragma ST7565R_Font /*
+ * */
 
+// Backlight functions
 void setBacklightNHD(uint8_t brightness);
 void blinkBacklightNHD(uint8_t oscillation);
 
