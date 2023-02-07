@@ -31,12 +31,12 @@
 ***** CONFIGURE THESE PINS TO MATCH YOUR PINOUT *****
 ****************************************************/
 #if defined(ST7565R_USING_STM)
-const ST7565R_STM_Pin NHD_LED = {.port = GPIOA, .pin = GPIO_PIN_15};		//PWM Voltage Source for Back Light
-const ST7565R_STM_Pin NHD_RES = {.port = GPIOD, .pin = GPIO_PIN_2 };		//Reset signal
-const ST7565R_STM_Pin NHD_A0  = {.port = GPIOB, .pin = GPIO_PIN_5 };		//Register select signal (Command = Low, Data=High)
-const ST7565R_STM_Pin NHD_SDA = {.port = GPIOC, .pin = GPIO_PIN_12};		//(MOSI) Serial data signal
-const ST7565R_STM_Pin NHD_CS  = {.port = GPIOB, .pin = GPIO_PIN_6 };		//Chip select signal
-const ST7565R_STM_Pin NHD_SCL = {.port = GPIOC, .pin = GPIO_PIN_10};		//Serial clock signal
+const ST7565R_STM_Pin NHD_LED = {.port = NHD_LED_GPIO_Port, .pin = NHD_LED_Pin};		//PWM Voltage Source for Back Light
+const ST7565R_STM_Pin NHD_RES = {.port = NHD_RES_GPIO_Port, .pin = NHD_RES_Pin};		//Reset signal
+const ST7565R_STM_Pin NHD_A0  = {.port = NHD_A0_GPIO_Port , .pin = NHD_A0_Pin };		//Register select signal (Command = Low, Data=High)
+const ST7565R_STM_Pin NHD_SDA = {.port = NHD_SDA_GPIO_Port, .pin = NHD_SDA_Pin};		//(MOSI) Serial data signal
+const ST7565R_STM_Pin NHD_CS  = {.port = NHD_CS_GPIO_Port , .pin = NHD_CS_Pin };		//Chip select signal
+const ST7565R_STM_Pin NHD_SCL = {.port = NHD_SCL_GPIO_Port, .pin = NHD_SCL_Pin};		//Serial clock signal
 #elif defined(ST7565R_USING_ATMEL)
 #define NHD_LED								IOPORT_CREATE_PIN(PORTD, 0)		// Voltage Source for Back Light
 #define NHD_RES								IOPORT_CREATE_PIN(PORTD, 3)		//Reset signal
@@ -58,24 +58,26 @@ static ST7565R_Font curFont;
 ****************************************************/
 void ST7565R_command(uint8_t cmd)
 {	// This function sends a command to the screen. See list of commands in ST7565R.h
-	ST7565R_digital_write(NHD_CS, LOW);						// Set Chip Select to Low to begin transmission over SPI
-	ST7565R_digital_write(NHD_A0, LOW);						// Set AO Low to specify a Command Transmission
-	ST7565R_spi_transmit(hspi3, cmd, 1, HAL_MAX_DELAY);		// Transmit command via SPI
-	ST7565R_digital_write(NHD_CS, HIGH);					// Set Chip Select to High to signal end of transmission
+	ST7565R_digital_write(NHD_CS, LOW);		// Set Chip Select to Low to begin transmission over SPI
+	ST7565R_digital_write(NHD_A0, LOW);		// Set AO Low to specify a Command Transmission
+	ST7565R_spi_transmit(cmd);				// Transmit command via SPI
+//	HAL_SPI_Transmit(&hspi3, &cmd, 1, HAL_MAX_DELAY);
+	ST7565R_digital_write(NHD_CS, HIGH);	// Set Chip Select to High to signal end of transmission
 }
 
 void ST7565R_paintByteHere(uint8_t byte)
 {	// This function simply draws the byte as is in the preselected location
-	ST7565R_digital_write(NHD_CS, LOW);						// Set Chip Select to Low to signal beginning of transmission over SPI
-	ST7565R_digital_write(NHD_A0, HIGH);					// Set AO High to specify a data transmission
-	ST7565R_spi_transmit(hspi3, byte, 1, HAL_MAX_DELAY); 	// Transmit data byte through SPI
-	ST7565R_digital_write(NHD_CS, HIGH);					// Set Chip Select to High to signal end of transmission
+	ST7565R_digital_write(NHD_CS, LOW);		// Set Chip Select to Low to signal beginning of transmission over SPI
+	ST7565R_digital_write(NHD_A0, HIGH);	// Set AO High to specify a data transmission
+	ST7565R_spi_transmit(byte); 			// Transmit data byte through SPI
+//	HAL_SPI_Transmit(&hspi3, &byte, 1, HAL_MAX_DELAY);
+	ST7565R_digital_write(NHD_CS, HIGH);	// Set Chip Select to High to signal end of transmission
 }
 
 void ST7565R_paintByte(unsigned column, unsigned page, uint8_t byte)
 {	// Paint a byte of data at a specified column and page (Columns are along x-axis, Pages are along y-axis in groups of 8)
 	if(column >= SCREENWIDTH){return;}
-	if(page >= NUM_PAGES)	 {return;}
+	if(page >= SCREENPAGES)	 {return;}
 	int byteIndex = (SCREENWIDTH*page)+column;
 	curScreen[byteIndex] = byte;
 	uint8_t colMSB = column/0x10;
@@ -168,16 +170,19 @@ void ST7565R_paintChar(char c, unsigned x, unsigned y)
 void ST7565R_paintFullscreenBitmap(uint8_t* bitmap)
 {	// Paint a bitmap that matches the size of the screen
 	if(bitmap == NULL){bitmap = crc;}					// Catch Null Pointers
+	for(int i = 0; i < SCREENBYTES; i++){
+		curScreen[i] = bitmap[i];
+	}
 	uint8_t page = ST7565R_CMD_PAGE_ADDRESS_SET(0);		// Initialize page
 														// LOGIC FLOW:
 	ST7565R_command(ST7565R_CMD_DISPLAY_OFF);			// Set Display OFF
 	ST7565R_command(ST7565R_CMD_START_LINE_SET(0));		// Set the start line to line 0
-	for(int i=0; i<NUM_PAGES; i++){						// 32 pixel display / 8 pixels per page = 4 pages
+	for(int i=0; i<SCREENPAGES; i++){						// 32 pixel display / 8 pixels per page = 4 pages
 		ST7565R_command(page);							// Send page address
 		ST7565R_command(ST7565R_CMD_MSB);				// Column address upper 4 bits + 0x10
 		ST7565R_command(ST7565R_CMD_LSB);				// Column address lower 4 bits + 0x00
 		for(int j=0; j<SCREENWIDTH; j++){				// 128 columns wide
-			ST7565R_paintByteHere(*bitmap);					// Send bitmap byte
+			ST7565R_paintByteHere(*bitmap);				// Send bitmap byte
 			bitmap++;									// Increment bitmap
 		}
 		page++;											// After drawing, go to next page
@@ -202,6 +207,7 @@ void ST7565R_paintBitmap(uint8_t* bitmap, unsigned width, unsigned height, unsig
 		}
 	}
 }
+
 void ST7565R_paintRectangle(ST7565R_DrawState drawOrErase, unsigned x, unsigned y, unsigned width, unsigned height){
 	if(x >= SCREENWIDTH) {return;}
 	if(y >= SCREENHEIGHT){return;}
@@ -219,7 +225,6 @@ void ST7565R_paintRectangle(ST7565R_DrawState drawOrErase, unsigned x, unsigned 
 void ST7565R_clearScreen(void)
 {	// Erase the entire screen
 	ST7565R_paintFullscreenBitmap(clear);
-	curScreen = clear;
 }
 
 
@@ -257,7 +262,7 @@ void ST7565R_initScreen(void)
 ****************************************************/
 void ST7565R_setup(void)
 {	// Initial Setup for ST7565R driver and screen
-	curScreen = clear;
+	curScreen = (uint8_t*) malloc(SCREENBYTES);
 	ST7565R_digital_write(NHD_RES, LOW);
 	ST7565R_delay(100);
 	ST7565R_digital_write(NHD_RES, HIGH);

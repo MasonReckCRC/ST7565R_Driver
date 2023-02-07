@@ -66,10 +66,11 @@
 #define SCREENHEIGHT	32
 
 #if defined(ST7565R_USING_STM)
-#define ST7565R_set_pwm(dutyCycle)							TIM2->CCR1 = dutyCycle /*TODO: Configure Me */
+#define ST7565R_set_pwm(dutyCycle)							TIM2->CCR1 = dutyCycle 									/*TODO: Configure Me */
+#define ST7565R_spi_transmit(data)							HAL_SPI_Transmit(&hspi3, &data, 1, HAL_MAX_DELAY)		/*TODO: Configure Me */
+
 #define ST7565R_digital_write(portPin, highLow) 			HAL_GPIO_WritePin(portPin.port, portPin.pin, highLow)
 #define ST7565R_delay(delayTime)							HAL_Delay(delayTime)
-#define ST7565R_spi_transmit(spi, data, size, timeout)		HAL_SPI_Transmit(&spi, &data, size, timeout)
 #elif defined(ST7565R_USING_ATMEL)
 #define ST7565R_set_pwm(dutyCycle)							/*TODO: Configure for Atmel*/
 #define ST7565R_digital_write(portPin, highLow) 			/*TODO: Configure for Atmel*/
@@ -92,7 +93,8 @@
 #define ST7565R_num_pages_from_height(height)				((height/8) + (height%8==0 ? 0 : 1))
 
 // Definitions
-#define NUM_PAGES											ST7565R_num_pages_from_height(SCREENHEIGHT)
+#define SCREENPAGES											ST7565R_num_pages_from_height(SCREENHEIGHT)
+#define SCREENBYTES											SCREENPAGES * SCREENWIDTH
 
 /****************************************************
 *              Commands				                *
