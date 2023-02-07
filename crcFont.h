@@ -11,9 +11,9 @@
 
 #include <stdint.h>
 
-#define USE_FONT_CRC
+#define USING_FONT_CRC
 
-#if defined(USE_FONT_CRC)
+#if defined(USING_FONT_CRC)
 /** Width of each glyph, including spacer column. */
 #define CRCFONT_WIDTH           10
 /** Height of each glyph, excluding spacer line. */

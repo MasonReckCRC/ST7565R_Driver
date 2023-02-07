@@ -23,6 +23,7 @@
 
 #include "ST7565R.h"
 #include "bitmaps.h"
+#include "crcFont.h"
 
 
 /****************************************************
@@ -239,7 +240,18 @@ void ST7565R_configureFont(ST7565R_Font newFont)
 	curFont.firstChar = newFont.firstChar;
 	curFont.lastChar = newFont.lastChar;
 }
-
+void ST7565R_configureDefaultFont(void){
+#if defined(USING_FONT_CRC)
+	ST7565R_Font defaultFont = {
+		.glyphs = 		fontCRC,
+		.width = 		CRCFONT_WIDTH,
+		.height = 		CRCFONT_HEIGHT,
+		.firstChar = 	CRCFONT_FIRSTCHAR,
+		.lastChar = 	CRCFONT_LASTCHAR
+	};
+	ST7565R_configureFont(defaultFont);
+#endif
+}
 
 /****************************************************
 *           Initialization For controller           *
@@ -263,6 +275,7 @@ void ST7565R_initScreen(void)
 void ST7565R_setup(void)
 {	// Initial Setup for ST7565R driver and screen
 	curScreen = (uint8_t*) malloc(SCREENBYTES);
+	ST7565R_configureDefaultFont();
 	ST7565R_digital_write(NHD_RES, LOW);
 	ST7565R_delay(100);
 	ST7565R_digital_write(NHD_RES, HIGH);
