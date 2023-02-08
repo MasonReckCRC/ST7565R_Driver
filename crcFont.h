@@ -21,7 +21,7 @@
 /** Line height. */
 #define CRCFONT_LINESPACING     8
 /** First character defined. */
-#  define CRCFONT_FIRSTCHAR			((uint8_t)' ')
+#define CRCFONT_FIRSTCHAR			((uint8_t)' ')
 /** Last character defined. */
 #define CRCFONT_LASTCHAR			((uint8_t)'}')
 

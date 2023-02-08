@@ -23,8 +23,7 @@
 #include <string.h>
 
 #include "ST7565R.h"
-#include "bitmaps.h"
-#include "crcFont.h"
+#include "Fonts/crcFont.h"
 
 
 /****************************************************
@@ -126,8 +125,14 @@ void ST7565R_paintString(char* string, unsigned x, unsigned y)
 	for(int i = 0; i < strlen(string); i ++){
 
 		// Special Characters
-		if (string[i] == '\n'){y += curFont.height;}	// New Line
-		if (string[i] == '\r'){x = originalX;}			// Carriage Return
+		switch(string[i]){
+		case '\n':
+			y += curFont.height+1;
+			continue;
+		case '\r':
+			x = originalX;
+			continue;
+		}
 
 
 		// Paint the currently selected character
@@ -171,7 +176,7 @@ void ST7565R_paintChar(char c, unsigned x, unsigned y)
 
 void ST7565R_paintFullscreenBitmap(uint8_t* bitmap)
 {	// Paint a bitmap that matches the size of the screen
-	if(bitmap == NULL){bitmap = crc;}					// Catch Null Pointers
+	if(bitmap == NULL){bitmap = bmp_clear();}					// Catch Null Pointers
 	for(int i = 0; i < SCREENBYTES; i++){
 		curScreen[i] = bitmap[i];
 	}
@@ -219,14 +224,15 @@ void ST7565R_paintRectangle(ST7565R_DrawState drawOrErase, unsigned x, unsigned 
 
 	for(int i = x; i < x2; i++){
 		for(int j = y; j < y2; j ++){
-			ST7565R_paintPixel(DRAW, i, j);
+			ST7565R_paintPixel(drawOrErase, i, j);
 		}
 	}
 }
 
 void ST7565R_clearScreen(void)
 {	// Erase the entire screen
-	ST7565R_paintFullscreenBitmap(clear);
+	uint8_t* clear = bmp_clear();
+	ST7565R_paintFullscreenBitmap(&clear[0]);
 }
 
 
@@ -321,7 +327,7 @@ void ST7565R_blinkBacklight(uint8_t oscillationSpeed)
 void ST7565R_screenTest(void)
 {
 	ST7565R_setBacklight(70);
-	ST7565R_paintFullscreenBitmap(crc);
+	ST7565R_paintFullscreenBitmap(bmp_crcLeft());
 	return;
 	unsigned testX = 0;
 	unsigned testY = 0;

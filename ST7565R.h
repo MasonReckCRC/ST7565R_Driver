@@ -54,6 +54,7 @@
 
 #include <stdbool.h>
 #ifdef ST7565R_USING_STM
+#include "main.h"
 #include "spi.h"
 #endif
 
