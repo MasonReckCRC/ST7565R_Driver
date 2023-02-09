@@ -76,7 +76,7 @@ void ST7565R_paintByteHere(uint8_t byte)
 	ST7565R_digital_write(NHD_CS, HIGH);	// Set Chip Select to High to signal end of transmission
 }
 
-void ST7565R_paintByte(unsigned column, unsigned page, uint8_t byte)
+void ST7565R_paintByte(uint8_t byte, unsigned column, unsigned page)
 {	// Paint a byte of data at a specified column and page (Columns are along x-axis, Pages are along y-axis in groups of 8)
 	if(column >= SCREENWIDTH){return;}
 	if(page >= SCREENPAGES)	 {return;}
@@ -98,11 +98,12 @@ void ST7565R_paintPixel(bool drawOrErase, unsigned x, unsigned y)
 	if(x >= SCREENWIDTH) {return;}
 	if(y >= SCREENHEIGHT){return;}
 	int byteIndex = (SCREENWIDTH*(y/8))+x;
-	uint8_t newByte = curScreen[byteIndex];
 	uint8_t colMSB = x/0x10;
 	uint8_t colLSB = x%0x10;
 
+
 	addPixelToCurScreen(drawOrErase, x, y);
+	uint8_t newByte = curScreen[byteIndex];
 	ST7565R_command(ST7565R_CMD_DISPLAY_OFF);		    // Set Display OFF
 	ST7565R_command(ST7565R_CMD_PAGE_ADDRESS_SET(y/8)); // Specify which page to draw to
 	ST7565R_command(ST7565R_CMD_COLUMN_MSB(colMSB));	// Specify which column to draw to, upper 4 bits + 0x10
@@ -122,11 +123,16 @@ void ST7565R_paintString(char* string, unsigned x, unsigned y)
 
 		// Special Characters
 		switch(string[i]){
-		case '\n':
+		case '\n': // New Line
 			y += curFont.height+1;
 			continue;
-		case '\r':
+		case '\r': // Carriage Return
 			x = originalX;
+			continue;
+		case '\t': // Tab
+			x += 2*curFont.width;
+			continue;
+		case '\0': // End of String
 			continue;
 		}
 
@@ -231,8 +237,7 @@ void ST7565R_paintRectangle(ST7565R_DrawState drawOrErase, unsigned x, unsigned 
 
 void ST7565R_clearScreen(void)
 {	// Erase the entire screen
-	uint8_t* clear = bmp_clear();
-	ST7565R_paintFullscreenBitmap(&clear[0]);
+	ST7565R_paintFullscreenBitmap(bmp_clear());
 }
 
 #ifndef PAINT_IMMEDIATELY
@@ -283,7 +288,6 @@ static void ST7565R_paintCurScreen(void){
 	}
 	ST7565R_command(ST7565R_CMD_DISPLAY_ON);			// Set Display ON
 }
-
 static void ST7565R_addCharToCurScreen(char c, unsigned x, unsigned y){
 	unsigned originalX = x;
 	unsigned bytesPerRow = font_num_bytes_per_row(curFont.width);
@@ -321,14 +325,12 @@ static void ST7565R_addPixelToCurScreen(bool drawOrErase, unsigned x, unsigned y
 	int byteIndex = (SCREENWIDTH*(y/8))+x;
 	uint8_t newByte = curScreen[byteIndex];
 	if(drawOrErase){
-		newByte |= 0b00000001<<(y%8);
+		newByte |= 0b00000001<<(y%8); 		// Draw
 	} else {
-		newByte &= ~(0b00000001<<(y%8));
+		newByte &= ~(0b00000001<<(y%8));	// Erase
 	}
 	curScreen[byteIndex] = newByte;
 }
-
-
 
 
 /****************************************************
@@ -378,8 +380,14 @@ void ST7565R_setup(void)
 {	// Initial Setup for ST7565R driver and screen
 #ifndef PAINT_IMMEDIATELY
 	lastScreen = (uint8_t*) malloc(SCREENBYTES);
+	for(int i = 0; i < SCREENBYTES; i++){
+		lastScreen[i] = 0xFF;
+	}
 #endif
 	curScreen = (uint8_t*) malloc(SCREENBYTES);
+	for(int i = 0; i < SCREENBYTES; i++){
+		curScreen[i] = 0x00;
+	}
 	ST7565R_configureDefaultFont();
 	ST7565R_digital_write(NHD_RES, LOW);
 	ST7565R_delay(100);
