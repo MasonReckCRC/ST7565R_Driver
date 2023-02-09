@@ -37,8 +37,7 @@
 #ifndef ST7565R_H_
 #define ST7565R_H_
 
-
-
+#include <stdbool.h>
 
 
 
@@ -48,11 +47,6 @@
 //#define ST7565R_USING_CUSTOM
 /***** CONFIGURE ME! *****/
 
-
-
-
-
-#include <stdbool.h>
 #ifdef ST7565R_USING_STM
 #include "main.h"
 #include "spi.h"
@@ -62,13 +56,39 @@
 
 /*****************************************************
 *     Configurable Pre-Processor Directives			 *
-*****************************************************/
-#define SCREENWIDTH		128
-#define SCREENHEIGHT	32
+/**********************************************************************************************************************************************************************\
+|		DEFINITION NAME							VALUE TYPE			VALUE 								SUGGESTED RANGE						DEFAULT VALUE			   |
+\**********************************************************************************************************************************************************************/
+//#define PAINT_IMMEDIATELY					 // Definition			UN/COMMENTED						 UN/COMMENTED						UNCOMMENTED
+#define SCREENWIDTH								((uint16_t) 		128									)// 1 - 5000						128 pixels
+#define SCREENHEIGHT							((uint16_t)			32									)// 1 - 5000						32 	pixels
 
 #if defined(ST7565R_USING_STM)
-#define ST7565R_set_pwm(dutyCycle)							TIM2->CCR1 = dutyCycle 									/*TODO: Configure Me */
-#define ST7565R_spi_transmit(data)							HAL_SPI_Transmit(&hspi3, &data, 1, HAL_MAX_DELAY)		/*TODO: Configure Me */
+#define	ST7565R_PWM_TIMER_CHANNEL									TIM2->CCR1							 // Configured Capture/Compare Register for a PWM
+#define ST7565R_SPI													hspi3								 // Configured spi for STM
+#endif
+
+/**********************************************************************************************************************************************************************\
+*   PROGRAM SETTINGS' DESCRIPTIONS																																	   *
+/**********************************************************************************************************************************************************************\
+*/  #pragma PAINT_IMMEDIATELY																																          /*
+*\		Comment out PAINT_IMMEDIATELY to use this driver in a different way. If you comment this out when you call the paint functions								  \*
+*\		it will only add them to the curScreen data structure. The driver will only paint to the display when you call ST7565R_updateDisplay();					 	  \*
+*\		One thing you can do is set up an interrupt on a timer to give our screen a specified frame rate. This reduces "flashing"				 					  \*
+*/  #pragma SCREENWIDTH 																																 			  /*
+*\		Configure this to the width of your screen in pixels																						  				  \*
+*/  #pragma SCREENHEIGHT																																  			  /*
+*\		Configure this to the height of your screen in pixels																										  \*
+*/	#pragma ST7565R_PWM_TIMER_CHANNEL																														 		  /*
+*\		STM: Configure this to the Capture/Compare Register in your timer that you have configured Pulse Width Modulation for. This is for the backlight.   				  \*
+*/  #pragma ST7565R_SPI																																				  /*
+*\		STM: Configure this to the spi structure thats configured to your screen.																	  								  \*
+\**********************************************************************************************************************************************************************/
+
+
+#if defined(ST7565R_USING_STM)
+#define ST7565R_set_pwm(dutyCycle)							ST7565R_PWM_TIMER_CHANNEL = dutyCycle 									/*TODO: Configure Me */
+#define ST7565R_spi_transmit(data)							HAL_SPI_Transmit(&ST7565R_SPI, &data, 1, HAL_MAX_DELAY)		/*TODO: Configure Me */
 
 #define ST7565R_digital_write(portPin, highLow) 			HAL_GPIO_WritePin(portPin.port, portPin.pin, highLow)
 #define ST7565R_delay(delayTime)							HAL_Delay(delayTime)
@@ -180,20 +200,30 @@ typedef const enum
 // ST7565R functions
 void ST7565R_command(uint8_t command);
 void ST7565R_paintByteHere(uint8_t byte);
-void ST7565R_paintByte(unsigned column, unsigned page, uint8_t byte);
-void ST7565R_paintPixel(bool newLevel, unsigned x, unsigned y);
+void ST7565R_paintByte(uint8_t byte, unsigned column, unsigned page);
+void ST7565R_paintPixel(ST7565R_DrawState drawOrErase, unsigned x, unsigned y);
 void ST7565R_paintString(char* string, unsigned x, unsigned y);
 void ST7565R_paintChar(char c, unsigned x, unsigned y);
 void ST7565R_paintFullscreenBitmap(uint8_t* bitmap);
 void ST7565R_paintBitmap(uint8_t* bitmap, unsigned width, unsigned height, unsigned x, unsigned y);
 void ST7565R_paintRectangle(ST7565R_DrawState drawOrErase, unsigned x, unsigned y, unsigned width, unsigned height);
 void ST7565R_clearScreen(void);
+void ST7565R_updateDisplay(void);
 void ST7565R_initScreen(void);
 void ST7565R_setup(void);
+
+// Font Functions
 void ST7565R_configureFont(ST7565R_Font newFont);
+void ST7565R_configureFontDefault(void);
+void ST7565R_configureFontFlow(void);
 /* To use custom fonts, you will need to make and pass
  * your own font structure */ #pragma ST7565R_Font /*
  * */
+ 
+// Private Functions
+static void ST7565R_paintCurScreen(void);
+static void ST7565R_addCharToCurScreen(char c, unsigned x, unsigned y);
+static void ST7565R_addPixelToCurScreen(ST7565R_DrawState  drawOrErase, unsigned x, unsigned y);
 
 // Backlight functions
 void ST7565R_setBacklight(uint8_t brightness);
