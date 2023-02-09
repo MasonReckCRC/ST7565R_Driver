@@ -12,6 +12,8 @@ Instructions:
   ST7565R_configureFont(ST7565R_Font font) function with a valid font structure.
   (You will need to create an instance of ST7565R_Font yourself and send it to the config function)
   
+  If you decide to comment out PAINT_IMMEDIATELY (if you are creating something with a higher refresh rate),
+  make sure you call updateDisplay() whenever you actually want to paint to the screen.
 
 
 DRIVER IS STILL IN PROGRESS
