@@ -59,7 +59,7 @@
 /**********************************************************************************************************************************************************************\
 |		DEFINITION NAME							VALUE TYPE			VALUE 								SUGGESTED RANGE						DEFAULT VALUE			   |
 \**********************************************************************************************************************************************************************/
-//#define PAINT_IMMEDIATELY					 // Definition			COMMENTED							UNCOMMENTED							UNCOMMENTED
+//#define PAINT_IMMEDIATELY					 // Definition			UN/COMMENTED						 UN/COMMENTED						UNCOMMENTED
 #define SCREENWIDTH								((uint16_t) 		128									)// 1 - 5000						128 pixels
 #define SCREENHEIGHT							((uint16_t)			32									)// 1 - 5000						32 	pixels
 
@@ -73,8 +73,8 @@
 /**********************************************************************************************************************************************************************\
 */  #pragma PAINT_IMMEDIATELY																																          /*
 *\		Comment out PAINT_IMMEDIATELY to use this driver in a different way. If you comment this out when you call the paint functions								  \*
-*\		it will only add them to the curScreen data structure. The driver will only paint to the display when you call the ST7565R_updateDisplay();					  \*
-*\		One thing you can do is set up an interrupt on a timer to give our screen a specified frame rate										 					  \*
+*\		it will only add them to the curScreen data structure. The driver will only paint to the display when you call ST7565R_updateDisplay();					 	  \*
+*\		One thing you can do is set up an interrupt on a timer to give our screen a specified frame rate. This reduces "flashing"				 					  \*
 */  #pragma SCREENWIDTH 																																 			  /*
 *\		Configure this to the width of your screen in pixels																						  				  \*
 */  #pragma SCREENHEIGHT																																  			  /*
@@ -201,7 +201,7 @@ typedef const enum
 void ST7565R_command(uint8_t command);
 void ST7565R_paintByteHere(uint8_t byte);
 void ST7565R_paintByte(uint8_t byte, unsigned column, unsigned page);
-void ST7565R_paintPixel(bool drawOrErase, unsigned x, unsigned y);
+void ST7565R_paintPixel(ST7565R_DrawState drawOrErase, unsigned x, unsigned y);
 void ST7565R_paintString(char* string, unsigned x, unsigned y);
 void ST7565R_paintChar(char c, unsigned x, unsigned y);
 void ST7565R_paintFullscreenBitmap(uint8_t* bitmap);
@@ -211,7 +211,11 @@ void ST7565R_clearScreen(void);
 void ST7565R_updateDisplay(void);
 void ST7565R_initScreen(void);
 void ST7565R_setup(void);
+
+// Font Functions
 void ST7565R_configureFont(ST7565R_Font newFont);
+void ST7565R_configureFontDefault(void);
+void ST7565R_configureFontFlow(void);
 /* To use custom fonts, you will need to make and pass
  * your own font structure */ #pragma ST7565R_Font /*
  * */
@@ -219,7 +223,7 @@ void ST7565R_configureFont(ST7565R_Font newFont);
 // Private Functions
 static void ST7565R_paintCurScreen(void);
 static void ST7565R_addCharToCurScreen(char c, unsigned x, unsigned y);
-static void ST7565R_addPixelToCurScreen(bool drawOrErase, unsigned x, unsigned y);
+static void ST7565R_addPixelToCurScreen(ST7565R_DrawState  drawOrErase, unsigned x, unsigned y);
 
 // Backlight functions
 void ST7565R_setBacklight(uint8_t brightness);
