@@ -63,6 +63,18 @@
 /*****************************************************
 *     Configurable Pre-Processor Directives			 *
 *****************************************************/
+/* @info on PAINT_IMMEDIATELY
+ *
+ * Comment out to use this driver in a different way.
+ * If you comment this out when you call the paint functions
+ * it will only add them to the curScreen data structure.
+ * the driver will only paint to the display when you call
+ * the ST7565R_updateDisplay();
+ * One thing you can do is set up an interrupt on a timer
+ * To give our screen a specified frame rate
+ */
+//#define PAINT_IMMEDIATELY
+
 #define SCREENWIDTH		128
 #define SCREENHEIGHT	32
 
@@ -181,19 +193,25 @@ typedef const enum
 void ST7565R_command(uint8_t command);
 void ST7565R_paintByteHere(uint8_t byte);
 void ST7565R_paintByte(unsigned column, unsigned page, uint8_t byte);
-void ST7565R_paintPixel(bool newLevel, unsigned x, unsigned y);
+void ST7565R_paintPixel(bool drawOrErase, unsigned x, unsigned y);
 void ST7565R_paintString(char* string, unsigned x, unsigned y);
 void ST7565R_paintChar(char c, unsigned x, unsigned y);
 void ST7565R_paintFullscreenBitmap(uint8_t* bitmap);
 void ST7565R_paintBitmap(uint8_t* bitmap, unsigned width, unsigned height, unsigned x, unsigned y);
 void ST7565R_paintRectangle(ST7565R_DrawState drawOrErase, unsigned x, unsigned y, unsigned width, unsigned height);
 void ST7565R_clearScreen(void);
+void ST7565R_updateDisplay(void);
 void ST7565R_initScreen(void);
 void ST7565R_setup(void);
 void ST7565R_configureFont(ST7565R_Font newFont);
 /* To use custom fonts, you will need to make and pass
  * your own font structure */ #pragma ST7565R_Font /*
  * */
+ 
+// Private Functions
+static void ST7565R_paintCurScreen(void);
+static void ST7565R_addCharToCurScreen(char c, unsigned x, unsigned y);
+static void ST7565R_addPixelToCurScreen(bool drawOrErase, unsigned x, unsigned y);
 
 // Backlight functions
 void ST7565R_setBacklight(uint8_t brightness);
