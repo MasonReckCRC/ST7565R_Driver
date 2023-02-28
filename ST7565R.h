@@ -211,6 +211,7 @@ void ST7565R_clearScreen(void);
 void ST7565R_updateDisplay(void);
 void ST7565R_initScreen(void);
 void ST7565R_setup(void);
+void ST7565R_shutdown(void);
 
 // Font Functions
 void ST7565R_configureFont(ST7565R_Font newFont);

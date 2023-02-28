@@ -25,6 +25,7 @@
 #include "ST7565R.h"
 #include "Fonts/crcFont.h"
 #include "Fonts/flowFont.h"
+#include "Fonts/kleinFont.h"
 
 
 /****************************************************
@@ -95,7 +96,7 @@ void ST7565R_paintByte(uint8_t byte, unsigned column, unsigned page)
 }
 
 void ST7565R_paintPixel(ST7565R_DrawState drawOrErase, unsigned x, unsigned y)
-{	// Paint an individual pixel at a specified (x,y) coordinate
+{	// Paint an individual pixel at a specified (x,y) coordinate.  DON'T FORGET TO updateDisplay()
 	if(x >= SCREENWIDTH) {return;}
 	if(y >= SCREENHEIGHT){return;}
 	int byteIndex = (SCREENWIDTH*(y/8))+x;
@@ -112,7 +113,7 @@ void ST7565R_paintPixel(ST7565R_DrawState drawOrErase, unsigned x, unsigned y)
 }
 
 void ST7565R_paintString(char* string, unsigned x, unsigned y)
-{	// Paint a string of characters at a specified (x,y) coordinate
+{	// Paint a string of characters at a specified (x,y) coordinate. DON'T FORGET TO updateDisplay()
 	if(string == NULL)	 {return;}
 	if(x >= SCREENWIDTH) {return;}
 	if(y >= SCREENHEIGHT){return;}
@@ -181,8 +182,8 @@ void ST7565R_paintChar(char c, unsigned x, unsigned y)
 	}
 }
 
-void ST7565R_paintFullscreenBitmap(uint8_t* bitmap){
-	// Paint a bitmap that matches the size of the screen
+void ST7565R_paintFullscreenBitmap(uint8_t* bitmap)
+{// Paint a bitmap that matches the size of the screen,  DON"T FORGET TO updateDisplay()
 	if(bitmap == NULL){bitmap = bmp_clear();}					// Catch Null Pointers
 	for(int i = 0; i < SCREENBYTES; i++){
 		curScreen[i] = bitmap[i];
@@ -210,15 +211,15 @@ void ST7565R_paintBitmap(uint8_t* bitmap, unsigned width, unsigned height, unsig
 #ifdef PAINT_IMMEDIATELY
 			// TODO: Finish Implement paint Bitmap
 #else
-
+			// TODO: Finish Implement paint Bitmap
 #endif
 		}
 	}
 }
 
 void ST7565R_paintRectangle(ST7565R_DrawState drawOrErase, unsigned x, unsigned y, unsigned width, unsigned height){
-	if(x >= SCREENWIDTH) {return;}
-	if(y >= SCREENHEIGHT){return;}
+	if(x >= SCREENWIDTH  || width > SCREENWIDTH) {return;}
+	if(y >= SCREENHEIGHT || height > SCREENHEIGHT){return;}
 	unsigned originalX = x;
 	unsigned x2 = x + width;
 	unsigned y2 = y + height;
@@ -245,8 +246,10 @@ void ST7565R_updateDisplay(void){
 #ifndef PAINT_IMMEDIATELY
 	ST7565R_paintCurScreen();
 	for(int i = 0; i < SCREENBYTES; i++){
-			lastScreen[i] = curScreen[i];
-	} 	// Set the curScreen to the new bitmap
+		lastScreen[i] = curScreen[i];
+		curScreen[i] = 0x00;
+	} 	// Record the displayed screen and reset the current screen data-structure
+
 #endif
 }
 
@@ -358,17 +361,28 @@ void ST7565R_configureFontDefault(void){
 }
 void ST7565R_configureFontFlow(void){
 #if defined(USING_FONT_FLOW)
-	ST7565R_Font flowFont = {
+	ST7565R_Font newFont = {
 		.glyphs = 		fontFlow,
 		.width = 		FLOWFONT_WIDTH,
 		.height = 		FLOWFONT_HEIGHT,
 		.firstChar = 	FLOWFONT_FIRSTCHAR,
 		.lastChar = 	FLOWFONT_LASTCHAR
 	};
-	ST7565R_configureFont(flowFont);
+	ST7565R_configureFont(newFont);
 #endif
 }
-
+void ST7565R_configureFontKlein(void){
+#if defined(USING_FONT_KLEIN)
+	ST7565R_Font newFont = {
+		.glyphs = 		fontKlein,
+		.width =		KLEINFONT_WIDTH,
+		.height = 		KLEINFONT_HEIGHT,
+		.firstChar = 	KLEINFONT_FIRSTCHAR,
+		.lastChar = 	KLEINFONT_LASTCHAR
+	};
+	ST7565R_configureFont(newFont);
+#endif
+}
 
 /****************************************************
 *           Initialization For controller           *
@@ -387,7 +401,7 @@ void ST7565R_initScreen(void)
 }
 
 /****************************************************
-*           Setup Functions 		                *
+*           Setup/Shutdown Functions 		        *
 ****************************************************/
 void ST7565R_setup(void)
 {	// Initial Setup for ST7565R driver and screen
@@ -411,6 +425,15 @@ void ST7565R_setup(void)
 	ST7565R_clearScreen();
 	ST7565R_updateDisplay();
 #endif
+}
+
+void ST7565R_shutdown(void)
+{
+	ST7565R_clearScreen();
+	ST7565R_updateDisplay();
+	ST7565R_command(ST7565R_CMD_DISPLAY_OFF);
+	free(lastScreen);
+	free(curScreen);
 }
 
 
