@@ -449,7 +449,7 @@ void ST7565R_setBacklight(uint8_t brightness)
 
 	ST7565R_set_pwm(brightness);
 }
-void ST7565R_blinkBacklight(uint8_t oscillationSpeed)
+void ST7565R_blinkBacklight(float oscillationSpeed)
 {	// Oscillate the brightness of the LED Backlight.
 	static int16_t tempBright = 0;
 	static int8_t dir = 1;
