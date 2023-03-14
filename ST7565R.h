@@ -228,7 +228,7 @@ static void ST7565R_addPixelToCurScreen(ST7565R_DrawState  drawOrErase, unsigned
 
 // Backlight functions
 void ST7565R_setBacklight(uint8_t brightness);
-void ST7565R_blinkBacklight(uint8_t oscillation);
+void ST7565R_blinkBacklight(float oscillation);
 
 
 // Test Functions
