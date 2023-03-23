@@ -65,7 +65,7 @@
 
 #if defined(ST7565R_USING_STM)
 #define	ST7565R_PWM_TIMER_CHANNEL									TIM2->CCR1							 // Configured Capture/Compare Register for a PWM
-#define ST7565R_SPI													hspi3								 // Configured spi for STM
+#define ST7565R_SPI													hspi2								 // Configured spi for STM
 #endif
 
 /**********************************************************************************************************************************************************************\
@@ -87,7 +87,7 @@
 
 
 #if defined(ST7565R_USING_STM)
-#define ST7565R_set_pwm(dutyCycle)							ST7565R_PWM_TIMER_CHANNEL = dutyCycle 									/*TODO: Configure Me */
+#define ST7565R_set_pwm(dutyCycle)							ST7565R_PWM_TIMER_CHANNEL = (uint32_t)dutyCycle*655.35		/*TODO: Configure Me */
 #define ST7565R_spi_transmit(data)							HAL_SPI_Transmit(&ST7565R_SPI, &data, 1, HAL_MAX_DELAY)		/*TODO: Configure Me */
 
 #define ST7565R_digital_write(portPin, highLow) 			HAL_GPIO_WritePin(portPin.port, portPin.pin, highLow)
@@ -105,7 +105,7 @@
 #endif
 
 /*****************************************************
-*     Non-Configurable Pre-Processor Directives		 *
+*     NON-CONFIGURABLE PRE-PROCESSOR DIRECTIVES		 *
 *****************************************************/
 
 // Macros
@@ -118,7 +118,7 @@
 #define SCREENBYTES											SCREENPAGES * SCREENWIDTH
 
 /****************************************************
-*              Commands				                *
+*              COMMANDS				                *
 ****************************************************/
 
 #define ST7565R_CMD_DISPLAY_ON                      0xAF
@@ -164,7 +164,7 @@
 
 
 /****************************************************
-*           Enumerations and Structures             *
+*           ENUMERATIONS AND STRUCTURES             *
 ****************************************************/
 
 #if defined(ST7565R_USING_STM)
@@ -174,7 +174,7 @@ typedef struct ST7565R_STM_Pin {
 }ST7565R_STM_Pin;
 #endif
 
-typedef struct ST7565R_Font{
+typedef struct ST7565R_Font_Struct{
 	uint8_t* glyphs;
 	uint8_t width;
 	uint8_t height;
@@ -198,47 +198,47 @@ typedef const enum
 ****************************************************/
 
 // ST7565R functions
-void ST7565R_command(uint8_t command);
-void ST7565R_paintByteHere(uint8_t byte);
-void ST7565R_paintByte(uint8_t byte, unsigned column, unsigned page);
-void ST7565R_paintPixel(ST7565R_DrawState drawOrErase, unsigned x, unsigned y);
-void ST7565R_paintString(char* string, unsigned x, unsigned y);
-void ST7565R_paintChar(char c, unsigned x, unsigned y);
-void ST7565R_paintFullscreenBitmap(uint8_t* bitmap);
-void ST7565R_paintBitmap(uint8_t* bitmap, unsigned width, unsigned height, unsigned x, unsigned y);
-void ST7565R_paintRectangle(ST7565R_DrawState drawOrErase, unsigned x, unsigned y, unsigned width, unsigned height);
-void ST7565R_clearScreen(void);
-void ST7565R_updateDisplay(void);
-void ST7565R_initScreen(void);
-void ST7565R_setup(void);
-void ST7565R_shutdown(void);
+void ST7565R_command						(uint8_t command);
+void ST7565R_paintByteHere					(uint8_t byte);
+void ST7565R_paintByte						(uint8_t byte, unsigned column, unsigned page);
+void ST7565R_paintPixel						(ST7565R_DrawState drawOrErase, unsigned x, unsigned y);
+void ST7565R_paintString					(char* string, unsigned x, unsigned y);
+void ST7565R_paintChar						(char c, unsigned x, unsigned y);
+void ST7565R_paintFullscreenBitmap			(uint8_t* bitmap);
+void ST7565R_paintBitmap					(uint8_t* bitmap, unsigned x, unsigned y, unsigned width, unsigned height);
+void ST7565R_paintRectangle					(ST7565R_DrawState drawOrErase, unsigned x, unsigned y, unsigned width, unsigned height);
+void ST7565R_clearScreen					(void);
+void ST7565R_updateDisplay					(void);
+void ST7565R_initScreen						(void);
+void ST7565R_setup							(void);
+void ST7565R_shutdown						(void);
 
 // Font Functions
-void ST7565R_configureFont(ST7565R_Font newFont);
-void ST7565R_configureFontDefault(void);
-void ST7565R_configureFontFlow(void);
+void ST7565R_configureFont					(ST7565R_Font newFont);
+void ST7565R_configureFontDefault			(void);
+void ST7565R_configureFontFlow				(void);
 /* To use custom fonts, you will need to make and pass
  * your own font structure */ #pragma ST7565R_Font /*
  * */
  
 // Private Functions
-static void ST7565R_paintCurScreen(void);
-static void ST7565R_addCharToCurScreen(char c, unsigned x, unsigned y);
-static void ST7565R_addPixelToCurScreen(ST7565R_DrawState  drawOrErase, unsigned x, unsigned y);
+static void ST7565R_paintCurScreen			(void);
+static void ST7565R_addCharToCurScreen		(char c, unsigned x, unsigned y);
+static void ST7565R_addPixelToCurScreen		(ST7565R_DrawState  drawOrErase, unsigned x, unsigned y);
 
 // Backlight functions
-void ST7565R_setBacklight(uint8_t brightness);
-void ST7565R_blinkBacklight(float oscillation);
+void ST7565R_setBacklight					(uint8_t brightness);
+void ST7565R_blinkBacklight					(float oscillation);
 
 
 // Test Functions
-void ST7565R_screenTest(void);
+void ST7565R_screenTest						(void);
 
 
 /*************************************************************************************************************************\
 |   Bitmaps											   																	  |
 |*************************************************************************************************************************|
-|   	Find bitmaps in the following bitmaps.h file */ #pragma BITMAPS_H /* (ctrl+click) to nav there					  |
+| Find and make bitmaps in the following bitmaps.h file */ #pragma BITMAPS_H /* (ctrl+click) to nav there				  |
 \*************************************************************************************************************************/
 #endif
 
