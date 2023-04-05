@@ -1,4 +1,4 @@
-# ST7565R_Driver
+# ST7565R_Driver in C
 Driver for Display Controllers that use the ST7565R driver
 
 Instructions:
